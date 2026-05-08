@@ -4,77 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>云端聊天室</title>
+    <!-- 换一个更稳定的分发服务器地址 -->
+    <script src="https://unpkg.com"></script>
     <style>
         body { font-family: sans-serif; background: #e7ebf0; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         header { background: #517da2; color: white; padding: 15px; text-align: center; font-weight: bold; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: white; padding: 10px; border-radius: 10px; align-self: flex-start; max-width: 70%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .msg { background: white; padding: 10px; border-radius: 10px; align-self: flex-start; max-width: 75%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .msg.me { background: #effdde; align-self: flex-end; }
         footer { background: white; padding: 15px; display: flex; gap: 10px; border-top: 1px solid #ddd; }
         input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
         button { background: #517da2; color: white; border: none; padding: 0 20px; border-radius: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <header id="status">正在同步云端数据... (若长时间没反应请刷新)</header>
+    <header id="status">正在同步云端数据...</header>
     <div id="chat"></div>
     <footer>
-        <input type="text" id="ipt" placeholder="输入消息..." autocomplete="off">
-        <button onclick="send()">发送</button>
+        <input id="ipt" placeholder="输入消息..." autocomplete="off">
+        <button onclick="sendMsg()">发送</button>
     </footer>
 
-    <!-- 先加载库，再运行代码 -->
-    <script src="https://jsdelivr.net"></script>
     <script>
+        // 核心配置
         const URL = 'https://supabase.co';
         const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Z3lxeWdyeWVhbGlmbnhpbmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjk4MzcsImV4cCI6MjA5MzgwNTgzN30.2_coqJbBl95QcnollMK2F2JSPJXexIkwy4rpiaH8EYc';
-        
-        // 延迟初始化，确保库已加载
-        window.onload = () => {
+
+        let _s, user;
+
+        function init() {
             if (typeof supabase === 'undefined') {
-                document.getElementById('status').innerText = "❌ 脚本加载失败，请检查网络是否能访问海外服务";
+                document.getElementById('status').innerText = "❌ 脚本加载中，请稍等或刷新...";
+                setTimeout(init, 2000); // 2秒后重试
                 return;
             }
 
-            const _s = supabase.createClient(URL, KEY);
-            let user = localStorage.getItem('user') || prompt("云端连接成功！请输入昵称") || "访客";
-            localStorage.setItem('user', user);
-
-            async function load() {
-                try {
-                    const { data, error } = await _s.from('messages').select('*').order('created_at');
-                    if (error) {
-                        document.getElementById('status').innerText = "❌ 错误: " + error.message;
-                    } else {
-                        document.getElementById('status').innerText = "✅ 云端已连接: " + user;
-                        if(data) data.forEach(m => add(m));
-                    }
-                } catch(e) {
-                    document.getElementById('status').innerText = "❌ 连接超时，请尝试开启加速器";
-                }
-            }
-
-            function add(m) {
-                const d = document.createElement('div');
-                d.className = 'msg';
-                d.innerText = m.username + ": " + m.content;
-                document.getElementById('chat').appendChild(d);
-                document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
-            }
-
-            window.send = async function() {
-                const i = document.getElementById('ipt');
-                const v = i.value.trim(); 
-                if(!v) return;
-                i.value = '';
-                const { error } = await _s.from('messages').insert([{ username: user, content: v }]);
-                if (error) alert("发送失败: " + error.message);
-            }
-
-            _s.channel('m').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, p => add(p.new)).subscribe();
-            document.getElementById('ipt').addEventListener('keypress', e => { if(e.key === 'Enter') send(); });
+            _s = supabase.createClient(URL, KEY);
+            user = localStorage.getItem('chat_u') || prompt("云端连接成功！请输入昵称") || "访客";
+            localStorage.setItem('chat_u', user);
             
             load();
-        };
+            
+            // 实时监听
+            _s.channel('m').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, p => add(p.new)).subscribe();
+        }
+
+        async function load() {
+            const { data, error } = await _s.from('messages').select('*').order('created_at');
+            if (error) {
+                document.getElementById('status').innerText = "❌ 连接失败: " + error.message;
+            } else {
+                document.getElementById('status').innerText = "✅ 云端已连接: " + user;
+                if(data) data.forEach(add);
+            }
+        }
+
+        function add(m) {
+            const d = document.createElement('div');
+            const isMe = m.username === user;
+            d.className = 'msg' + (isMe ? ' me' : '');
+            d.innerText = m.username + ": " + m.content;
+            document.getElementById('chat').appendChild(d);
+            document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+        }
+
+        async function sendMsg() {
+            const i = document.getElementById('ipt');
+            const v = i.value.trim();
+            if(!v) return;
+            i.value = '';
+            await _s.from('messages').insert([{ username: user, content: v }]);
+        }
+
+        document.getElementById('ipt').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
+        
+        // 启动
+        init();
     </script>
 </body>
 </html>
