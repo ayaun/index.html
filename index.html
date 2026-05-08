@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>云端聊天室</title>
-    <!-- 尝试从国内加速镜像加载库 -->
-    <script src="https://baomitu.com"></script>
+    <!-- 使用国内字节跳动加速镜像，确保加载不卡顿 -->
+    <script src="https://bytecdntp.com"></script>
     <style>
         body { font-family: sans-serif; background: #e7ebf0; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         header { background: #517da2; color: white; padding: 15px; text-align: center; font-weight: bold; }
@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <header id="status">🌐 正在建立云端加密连接...</header>
+    <header id="status">🌐 正在建立云端连接...</header>
     <div id="chat"></div>
     <footer>
         <input id="ipt" placeholder="输入消息..." autocomplete="off">
@@ -26,41 +26,29 @@
     </footer>
 
     <script>
-        // 核心配置
         const URL = 'https://supabase.co';
         const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Z3lxeWdyeWVhbGlmbnhpbmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjk4MzcsImV4cCI6MjA5MzgwNTgzN30.2_coqJbBl95QcnollMK2F2JSPJXexIkwy4rpiaH8EYc';
 
         let _s, user;
 
-        // 检查库是否加载成功
-        function start() {
-            if (window.supabase) {
-                init();
-            } else {
-                // 如果 baomitu 也没加载出来，尝试最后一个备用地址
-                let script = document.createElement('script');
-                script.src = "https://staticfile.org";
-                script.onload = init;
-                script.onerror = () => {
-                    document.getElementById('status').innerText = "❌ 网络极其不稳定，请尝试切换至手机热点并刷新";
-                };
-                document.head.appendChild(script);
-            }
-        }
-
         async function init() {
+            // 检查库是否成功加载
+            if (typeof supabase === 'undefined') {
+                document.getElementById('status').innerText = "❌ 脚本加载失败，请检查网络";
+                return;
+            }
+
             _s = supabase.createClient(URL, KEY);
             user = localStorage.getItem('chat_u') || prompt("云端通道已开启！请输入聊天昵称") || "访客";
             localStorage.setItem('chat_u', user);
-            
-            document.getElementById('status').innerText = "✅ 云端已就绪 | 昵称: " + user;
-            
-            // 加载历史
+            document.getElementById('status').innerText = "✅ 云端已连接 | 昵称: " + user;
+
+            // 加载历史记录
             const { data } = await _s.from('messages').select('*').order('created_at');
             if(data) data.forEach(add);
-            
+
             // 实时监听
-            _s.channel('m').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, p => add(p.new)).subscribe();
+            _s.from('messages').on('INSERT', payload => { add(payload.new); }).subscribe();
         }
 
         function add(m) {
@@ -74,14 +62,14 @@
         async function sendMsg() {
             const i = document.getElementById('ipt');
             const v = i.value.trim();
-            if(!v || !_s) return;
+            if(!v) return;
             i.value = '';
             await _s.from('messages').insert([{ username: user, content: v }]);
         }
 
         document.getElementById('ipt').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
         
-        start();
+        init();
     </script>
 </body>
 </html>
