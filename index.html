@@ -3,94 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Telegram Pro - 终极版</title>
+    <title>Cloud Telegram Pro - 最终通车版</title>
     <script>
-    /* 核心库内置：防止网络拦截导致的 supabase is not defined 错误 */
-    (function(g,f){typeof exports==='object'&&typeof module!=='undefined'?f(exports):typeof define==='function'&&define.amd?define(['exports'],f):(f((g.supabase={})));}(this,(function(exports){'use strict';exports.createClient=function(u,k){return{from:function(t){return{select:function(q){return{eq:function(f,v){return{maybeSingle:function(){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*`,{headers:{apikey:k,Authorization:`Bearer ${k}`}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))},single:function(){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*`,{headers:{apikey:k,Authorization:`Bearer ${k}`,Accept:'application/vnd.pgrst.object+json'}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}},insert:function(v){return{select:function(){return{single:function(){return fetch(`${u}/rest/v1/${t}`,{method:'POST',headers:{apikey:k,Authorization:`Bearer ${k}`,'Content-Type':'application/json',Prefer:'return=representation' },body:JSON.stringify(v)}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}},update:function(v){return{eq:function(f,id){return fetch(`${u}/rest/v1/${t}?${f}=eq.${id}`,{method:'PATCH',headers:{apikey:k,Authorization:`Bearer ${k}`,'Content-Type':'application/json'},body:JSON.stringify(v)}).then(r=>({error:r.ok?null:r}))}}},order:function(c,o){return{eq:function(f,v){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*&order=${c}.${o.ascending?'asc':'desc'}`,{headers:{apikey:k,Authorization:`Bearer ${k}`}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}}}};})));
+    /* 核心驱动内置：彻底解决所有网络导致的加载报错 */
+    (function(g,f){typeof exports==='object'&&typeof module!=='undefined'?f(exports):typeof define==='function'&&define.amd?define(['exports'],f):(f((g.supabase={})));}(this,(function(exports){'use strict';exports.createClient=function(u,k){return{from:function(t){return{select:function(q){return{eq:function(f,v){return{maybeSingle:function(){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*`,{headers:{apikey:k,Authorization:`Bearer ${k}`}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))},single:function(){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*`,{headers:{apikey:k,Authorization:`Bearer ${k}`,Accept:'application/vnd.pgrst.object+json'}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}},insert:function(v){return{select:function(){return{single:function(){return fetch(`${u}/rest/v1/${t}`,{method:'POST',headers:{apikey:k,Authorization:`Bearer ${k}`,'Content-Type':'application/json',Prefer:'return=representation' },body:JSON.stringify(v)}).then(r=>r.json().then(d=>({data:r.ok?(Array.isArray(d)?d:d):null,error:r.ok?null:d})))}}}}},update:function(v){return{eq:function(f,id){return fetch(`${u}/rest/v1/${t}?${f}=eq.${id}`,{method:'PATCH',headers:{apikey:k,Authorization:`Bearer ${k}`,'Content-Type':'application/json'},body:JSON.stringify(v)}).then(r=>({error:r.ok?null:r}))}}},order:function(c,o){return{eq:function(f,v){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*&order=${c}.${o.ascending?'asc':'desc'}`,{headers:{apikey:k,Authorization:`Bearer ${k}`}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}}}};})));
     </script>
     <style>
         :root { --tg-blue: #248bcf; --tg-bg: #f4f4f5; --tg-sent: #effdde; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: system-ui, -apple-system, sans-serif; background: var(--tg-bg); overflow: hidden; }
-        
-        /* 登录注册界面 */
         #auth-screen { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #517da2, #248bcf); }
         .auth-box { width: 340px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
         .tg-input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; outline: none; font-size: 16px; }
         .tg-btn { width: 100%; padding: 14px; background: var(--tg-blue); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         .switch-link { margin-top: 15px; font-size: 13px; color: var(--tg-blue); cursor: pointer; display: block; }
-
-        /* 主界面 */
         #main-app { display: none; height: 100vh; grid-template-columns: 300px 1fr; background: white; }
         .sidebar { border-right: 1px solid #ddd; display: flex; flex-direction: column; background: #fff; }
         .sidebar-header { padding: 15px; background: var(--tg-blue); color: white; display: flex; align-items: center; gap: 10px; }
         .contact-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
         .contact-item.active { background: #e3f2fd; border-left: 4px solid var(--tg-blue); }
-        
-        /* 头像 */
-        .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background: #999; flex-shrink: 0; position: relative; }
-        
-        /* 聊天区 */
+        .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background: #999; flex-shrink: 0; }
         .chat-area { display: flex; flex-direction: column; background: #e7ebf0 url('https://githubusercontent.com'); }
         #messages-view { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 15px; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); line-height: 1.4; }
+        .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 15px; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .msg-bubble.sent { align-self: flex-end; background: #effdde; border-bottom-right-radius: 2px; }
         .msg-bubble.received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
         .chat-footer { padding: 15px; background: white; display: flex; gap: 10px; }
-        
-        /* 头像修改弹窗 */
         #av-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
         .av-grid { background: white; padding: 20px; border-radius: 15px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     </style>
 </head>
 <body>
-
-    <!-- 1. 登录与注册界面 -->
     <div id="auth-screen">
         <div class="auth-box">
-            <h2 id="auth-title" style="margin-top:0; color:#333">登录 Cloud Telegram</h2>
-            <p id="auth-subtitle" style="color:#666; font-size:14px">输入账号密码开启云端同步</p>
-            
+            <h2 id="auth-title" style="margin-top:0">登录 Cloud Telegram</h2>
+            <p id="auth-subtitle" style="color:#666; font-size:14px">输入云端账号开启同步</p>
             <input type="text" id="u-name" class="tg-input" placeholder="用户名">
             <input type="password" id="u-pwd" class="tg-input" placeholder="密码">
-            
             <button id="auth-btn" class="tg-btn" onclick="handleAuth()">登 录</button>
             <span id="auth-switch" class="switch-link" onclick="toggleAuthMode()">没有账号？点击注册</span>
-            
-            <div id="auth-tips" style="margin-top:15px; font-size:12px; color:#888; min-height:1.2em"></div>
+            <div id="auth-tips" style="margin-top:15px; font-size:12px; color:#888"></div>
         </div>
     </div>
 
-    <!-- 2. 主聊天应用界面 -->
     <div id="main-app">
         <div class="sidebar">
             <div class="sidebar-header">
-                <!-- 点击头像可以修改 -->
                 <div id="my-av" class="avatar" style="cursor:pointer; border:2px solid rgba(255,255,255,0.3)" onclick="openAvModal()">?</div>
-                <div style="flex:1">
-                    <div id="my-name" style="font-weight:bold; font-size:16px">正在同步...</div>
-                    <div style="font-size:11px; opacity:0.8">云端账号已保护</div>
-                </div>
+                <div style="flex:1"><div id="my-name" style="font-weight:bold">正在同步...</div><div style="font-size:11px; opacity:0.8">24H 云端挂机</div></div>
                 <button onclick="logout()" style="background:none; border:none; color:white; font-size:11px; cursor:pointer">退出</button>
             </div>
-            
-            <!-- 功能按钮：建群 -->
-            <div style="padding:10px; border-bottom:1px solid #eee">
-                <button onclick="createGroup()" style="width:100%; padding:8px; border:1px dashed #ccc; background:#f9f9f9; border-radius:8px; cursor:pointer; font-size:12px">+ 新建公共群组</button>
-            </div>
-
-            <div id="contacts-list" style="overflow-y:auto; flex:1">
-                <div style="padding:20px; color:#999; text-align:center">寻找在线联系人...</div>
-            </div>
+            <div id="contacts-list" style="overflow-y:auto; flex:1"></div>
         </div>
-
         <div class="chat-area">
             <div style="padding:12px 20px; background:white; border-bottom:1px solid #ddd; display:flex; align-items:center; gap:10px">
                 <div id="t-av" class="avatar" style="width:34px; height:34px; font-size:14px">?</div>
                 <div id="t-name" style="font-weight:bold">请选择聊天对象</div>
             </div>
-            
             <div id="messages-view"></div>
-            
             <div class="chat-footer">
                 <input type="text" id="msg-ipt" class="tg-input" style="margin:0" placeholder="写消息..." autocomplete="off">
                 <button class="tg-btn" style="width:80px; margin:0" onclick="send()">发送</button>
@@ -98,54 +67,34 @@
         </div>
     </div>
 
-    <!-- 3. 头像修改弹窗 -->
-    <div id="av-modal" onclick="closeAvModal()">
-        <div class="av-grid" onclick="event.stopPropagation()">
-            <!-- 由JS生成头像选项 -->
-        </div>
-    </div>
+    <div id="av-modal" onclick="closeAvModal()"><div class="av-grid" onclick="event.stopPropagation()"></div></div>
+
     <script>
-        // --- 1. 核心配置 (已填入你的专属 URL 和 Key) ---
         const URL = 'https://supabase.co';
         const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Z3lxeWdyeWVhbGlmbnhpbmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjk4MzcsImV4cCI6MjA5MzgwNTgzN30.2_coqJbBl95QcnollMK2F2JSPJXexIkwy4rpiaH8EYc';
         const _s = supabase.createClient(URL, KEY);
         const avColors = ['#E57373', '#81C784', '#64B5F6', '#FFB74D', '#BA68C8', '#4DB6AC', '#FF8A65', '#90A4AE'];
-
         let me = null, target = 'PUBLIC_DOMAIN', isRegMode = false;
 
-        // --- 2. 登录/注册切换逻辑 ---
         function toggleAuthMode() {
             isRegMode = !isRegMode;
             document.getElementById('auth-title').innerText = isRegMode ? "注册 Cloud Telegram" : "登录 Cloud Telegram";
-            document.getElementById('auth-subtitle').innerText = isRegMode ? "创建一个属于你的云端账号" : "输入账号密码开启云端同步";
             document.getElementById('auth-btn').innerText = isRegMode ? "注 册" : "登 录";
             document.getElementById('auth-switch').innerText = isRegMode ? "已有账号？点击登录" : "没有账号？点击注册";
         }
 
-        // --- 3. 身份验证核心 ---
-                async function handleAuth() {
+        async function handleAuth() {
             const name = document.getElementById('u-name').value.trim();
             const pwd = document.getElementById('u-pwd').value.trim();
             const tips = document.getElementById('auth-tips');
             if(!name || !pwd) return alert("请填写完整");
-
-            tips.innerText = "⚡ 正在连接云端服务器...";
-            
-            // 增加 10 秒强制超时，防止无限转圈
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-
+            tips.innerText = "⚡ 正在同步云端身份...";
             try {
-                // 1. 尝试探测账号
-                let { data: u, error: fetchError } = await _s.from('users').select('*').eq('username', name).maybeSingle();
-                clearTimeout(timeoutId);
-
+                let { data: u } = await _s.from('users').select('*').eq('username', name).maybeSingle();
                 if (isRegMode) {
                     if (u) { tips.innerText = "❌ 账号已存在"; return; }
-                    // 2. 注册逻辑
-                    const { data: newUser, error: regError } = await _s.from('users').insert([{ username: name, password: pwd, avatar_index: Math.floor(Math.random()*8) }]).select().single();
-                    if (regError) throw regError;
-                    me = newUser;
+                    const { data: n } = await _s.from('users').insert([{ username: name, password: pwd, avatar_index: Math.floor(Math.random()*8) }]).select().single();
+                    me = n;
                 } else {
                     if (!u) { tips.innerText = "❌ 账号不存在"; return; }
                     if (u.password !== pwd) { tips.innerText = "❌ 密码错误"; return; }
@@ -153,19 +102,11 @@
                 }
                 localStorage.setItem('tg_pro_user', JSON.stringify(me));
                 startApp();
-            } catch(e) {
-                console.error(e);
-                if (e.name === 'AbortError') {
-                    tips.innerText = "❌ 连接超时！请尝试更换手机热点或开启加速器";
-                } else {
-                    tips.innerText = "❌ 错误: " + (e.message || "无法访问云端，请检查SQL权限");
-                }
-            }
+            } catch(e) { tips.innerText = "❌ 连接异常，请换网重试"; }
         }
 
         function logout() { localStorage.removeItem('tg_pro_user'); location.reload(); }
 
-        // --- 4. 应用启动与同步 ---
         function startApp() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'grid';
@@ -186,24 +127,21 @@
         async function syncContacts() {
             const { data } = await _s.from('users').select('*').neq('username', me.username);
             const list = document.getElementById('contacts-list');
-            let html = `<div class="contact-item ${target==='PUBLIC_DOMAIN'?'active':''}" onclick="selectT('PUBLIC_DOMAIN','公共大群',0)">
-                <div class="avatar" style="background:#f39c12">G</div><b>公共大群</b></div>`;
+            let h = `<div class="contact-item ${target==='PUBLIC_DOMAIN'?'active':''}" onclick="selectT('PUBLIC_DOMAIN','公共大群',0)"><div class="avatar" style="background:#f39c12">G</div><b>公共大群</b></div>`;
             data?.forEach(u => {
-                const color = avColors[u.avatar_index % 8];
-                html += `<div class="contact-item ${target===u.username?'active':''}" onclick="selectT('${u.username}','${u.username}',${u.avatar_index})">
-                    <div class="avatar" style="background:${color}">${u.username.charAt(0).toUpperCase()}</div><b>${u.username}</b></div>`;
+                h += `<div class="contact-item ${target===u.username?'active':''}" onclick="selectT('${u.username}','${u.username}',${u.avatar_index})"><div class="avatar" style="background:${avColors[u.avatar_index%8]}">${u.username[0].toUpperCase()}</div><b>${u.username}</b></div>`;
             });
-            list.innerHTML = html;
+            list.innerHTML = h;
         }
 
         function selectT(id, name, idx) {
             target = id;
             document.getElementById('t-name').innerText = name;
             const tAv = document.getElementById('t-av');
-            tAv.innerText = name.charAt(0).toUpperCase();
-            tAv.style.background = id === 'PUBLIC_DOMAIN' ? '#f39c12' : avColors[idx % 8];
+            tAv.innerText = name[0].toUpperCase();
+            tAv.style.background = id === 'PUBLIC_DOMAIN' ? '#f39c12' : avColors[idx%8];
             document.getElementById('messages-view').innerHTML = '';
-            window.renderedIds = new Set();
+            window.rIds = new Set();
             syncMsgs();
             syncContacts();
         }
@@ -213,61 +151,48 @@
             const room = target === 'PUBLIC_DOMAIN' ? 'PUBLIC_DOMAIN' : [me.username, target].sort().join('_VS_');
             const { data } = await _s.from('messages').select('*').eq('room_id', room).order('created_at', {ascending:true});
             data?.forEach(m => {
-                if(!window.renderedIds || !window.renderedIds.has(m.id)) {
-                    if(!window.renderedIds) window.renderedIds = new Set();
-                    const view = document.getElementById('messages-view');
-                    const div = document.createElement('div');
-                    div.className = `msg-bubble ${m.username===me.username?'sent':'received'}`;
-                    div.innerHTML = `<div style="font-size:10px;font-weight:bold;color:#517da2">${m.username}</div>${m.content}`;
-                    view.appendChild(div);
-                    view.scrollTop = 99999;
-                    window.renderedIds.add(m.id);
+                if(!window.rIds || !window.rIds.has(m.id)) {
+                    if(!window.rIds) window.rIds = new Set();
+                    const v = document.getElementById('messages-view');
+                    const d = document.createElement('div');
+                    d.className = `msg-bubble ${m.username===me.username?'sent':'received'}`;
+                    d.innerHTML = `<div style="font-size:10px;font-weight:bold;color:#517da2">${m.username}</div>${m.content}`;
+                    v.appendChild(d);
+                    v.scrollTop = 99999;
+                    window.rIds.add(m.id);
                 }
             });
         }
 
         async function send() {
             const ipt = document.getElementById('msg-ipt');
-            const val = ipt.value.trim();
-            if(!val) return;
+            if(!ipt.value.trim()) return;
             const room = target === 'PUBLIC_DOMAIN' ? 'PUBLIC_DOMAIN' : [me.username, target].sort().join('_VS_');
-            ipt.value = '';
+            const val = ipt.value; ipt.value = '';
             await _s.from('messages').insert([{ username: me.username, content: val, room_id: room }]);
             syncMsgs();
         }
 
-        // --- 5. 头像修改功能 ---
         function openAvModal() {
-            const modal = document.getElementById('av-modal');
-            const grid = modal.querySelector('.av-grid');
-            grid.innerHTML = '';
+            const m = document.getElementById('av-modal');
+            const g = m.querySelector('.av-grid');
+            g.innerHTML = '';
             avColors.forEach((c, i) => {
-                const div = document.createElement('div');
-                div.className = 'avatar';
-                div.style.background = c;
-                div.style.cursor = 'pointer';
-                div.innerText = me.username.charAt(0).toUpperCase();
-                div.onclick = () => updateAvatar(i);
-                grid.appendChild(div);
+                const d = document.createElement('div');
+                d.className = 'avatar'; d.style.background = c; d.style.cursor = 'pointer'; d.innerText = me.username[0].toUpperCase();
+                d.onclick = () => updateAvatar(i);
+                g.appendChild(d);
             });
-            modal.style.display = 'flex';
+            m.style.display = 'flex';
         }
 
         async function updateAvatar(idx) {
             await _s.from('users').update({ avatar_index: idx }).eq('id', me.id);
-            me.avatar_index = idx;
-            renderMe();
-            closeAvModal();
+            me.avatar_index = idx; renderMe(); closeAvModal();
         }
 
         function closeAvModal() { document.getElementById('av-modal').style.display = 'none'; }
-        function createGroup() { const name = prompt("输入群组名称:"); if(name) selectT('GROUP_'+name, "[群] "+name, Math.floor(Math.random()*8)); }
-
-        // 自动登录与事件绑定
-        window.onload = () => {
-            const saved = localStorage.getItem('tg_pro_user');
-            if(saved) { me = JSON.parse(saved); startApp(); }
-        };
+        window.onload = () => { const s = localStorage.getItem('tg_pro_user'); if(s) { me = JSON.parse(s); startApp(); } };
         document.getElementById('msg-ipt').onkeypress = e => e.key==='Enter' && send();
     </script>
 </body>
