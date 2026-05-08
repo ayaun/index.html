@@ -3,264 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Telegram Pro</title>
-    <!-- 加载 Supabase 功能库 -->
+    <title>Cloud Telegram Pro - 终极版</title>
+    <!-- 加载 Supabase 核心库 -->
     <script src="https://jsdelivr.net"></script>
     <style>
-        :root { --tg-blue: #517da2; --tg-bg: #e7ebf0; --tg-sent: #effdde; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: var(--tg-bg); overflow: hidden; }
+        :root { --tg-blue: #248bcf; --tg-bg: #f4f4f5; --tg-sent: #effdde; --sidebar-w: 300px; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--tg-bg); overflow: hidden; }
         
-        /* 登录遮罩层 */
-        #login-screen { position: fixed; inset: 0; background: white; z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .login-box { width: 320px; text-align: center; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 15px; }
-        .tg-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #dfe1e5; border-radius: 10px; box-sizing: border-box; outline: none; font-size: 16px; }
-        .tg-btn { width: 100%; padding: 12px; background: var(--tg-blue); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        /* 完善后的全屏登录页面 */
+        #login-screen { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #517da2 0%, #248bcf 100%); transition: 0.5s; }
+        .login-box { width: 340px; background: white; padding: 40px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); text-align: center; }
+        .login-logo { width: 70px; height: 70px; background: var(--tg-blue); border-radius: 22px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(36,139,207,0.3); }
+        .tg-input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #e0e0e0; border-radius: 12px; box-sizing: border-box; outline: none; font-size: 16px; transition: 0.3s; }
+        .tg-input:focus { border-color: var(--tg-blue); box-shadow: 0 0 0 3px rgba(36, 139, 207, 0.1); }
+        .tg-btn { width: 100%; padding: 14px; background: var(--tg-blue); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        .tg-btn:hover { background: #1c74ad; }
+        #login-tips { font-size: 13px; margin-top: 15px; color: #666; min-height: 1.2em; }
 
-        /* 主界面 - 左右分栏 */
-        #main-app { display: none; height: 100vh; grid-template-columns: 300px 1fr; }
-        
-        /* 左侧侧边栏 */
-        .sidebar { background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
+        /* 主界面布局 */
+        #main-app { display: none; height: 100vh; grid-template-columns: var(--sidebar-w) 1fr; background: #fff; }
+        .sidebar { border-right: 1px solid #e6e6e6; display: flex; flex-direction: column; background: #fff; }
         .sidebar-header { padding: 15px; background: var(--tg-blue); color: white; display: flex; align-items: center; gap: 12px; }
         .user-list { flex: 1; overflow-y: auto; }
-        .contact-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #f5f5f5; transition: 0.2s; }
-        .contact-item:hover { background: #f0f4f8; }
-        .contact-item.active { background: #e3f2fd; border-left: 4px solid var(--tg-blue); }
         
-        /* 头像通用样式 */
-        .avatar { width: 48px; height: 48px; border-radius: 50%; background: #517da2; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; flex-shrink: 0; position: relative; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-
-        /* 右侧聊天区 */
-        .chat-area { display: flex; flex-direction: column; background-image: url('https://githubusercontent.com'); background-size: cover; }
-        .chat-header { padding: 12px 20px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 12px; font-weight: bold; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
+        /* 联系人项样式 */
+        .contact-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #f9f9f9; transition: 0.2s; }
+        .contact-item:hover { background: #f5f5f5; }
+        .contact-item.active { background: #eff7ff; border-left: 4px solid var(--tg-blue); }
+        
+        /* 头像系统 */
+        .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; flex-shrink: 0; text-transform: uppercase; }
+        
+        /* 聊天区样式 */
+        .chat-area { display: flex; flex-direction: column; background: #e7ebf0 url('https://githubusercontent.com'); }
+        .chat-header { padding: 10px 20px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 12px; font-weight: bold; height: 50px; }
         #messages-view { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
         
-        /* 气泡样式 */
-        .msg-bubble { max-width: 70%; padding: 8px 12px; border-radius: 12px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
-        .msg-bubble.sent { align-self: flex-end; background: var(--tg-sent); border-bottom-right-radius: 2px; }
-        .msg-bubble.received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
-        .msg-info { font-size: 11px; color: #888; margin-top: 4px; text-align: right; }
-
-        /* 底部输入框 */
-        .chat-footer { padding: 15px; background: white; display: flex; gap: 10px; border-top: 1px solid #ddd; }
+        /* 消息气泡 */
+        .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 16px; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); line-height: 1.4; word-wrap: break-word; }
+        .msg-bubble.sent { align-self: flex-end; background: #effdde; border-bottom-right-radius: 4px; }
+        .msg-bubble.received { align-self: flex-start; background: white; border-bottom-left-radius: 4px; }
+        .msg-user { font-size: 11px; font-weight: bold; color: var(--tg-blue); margin-bottom: 3px; }
         
-        /* 头像切换弹窗 */
-        #avatar-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
-        .modal-body { background: white; padding: 20px; border-radius: 15px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .chat-footer { padding: 15px; background: white; display: flex; gap: 12px; border-top: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
-    <!-- 1. 登录/注册界面 -->
+    <!-- 1. 登录与注册遮罩层 -->
     <div id="login-screen">
         <div class="login-box">
-            <img src="https://wikimedia.org" width="70" style="margin-bottom:15px">
-            <h2 style="color:#222; margin-bottom:5px">Cloud Telegram Pro</h2>
-            <p style="color:#888; font-size:14px; margin-bottom:20px">登录以同步你的云端消息</p>
-            <input type="text" id="auth-user" class="tg-input" placeholder="输入用户名 (由字母/数字组成)">
-            <input type="password" id="auth-pwd" class="tg-input" placeholder="输入密码">
+            <div class="login-logo">
+                <!-- Telegram 风格图标 -->
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.91-1.27 4.85-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            </div>
+            <h2 style="margin:0; color:#333">Cloud Telegram Pro</h2>
+            <p style="color:#888; font-size:14px; margin:10px 0 25px">登录以永久保留你的聊天账号</p>
+            
+            <input type="text" id="login-username" class="tg-input" placeholder="输入用户名">
+            <input type="password" id="login-password" class="tg-input" placeholder="输入密码">
+            
             <button class="tg-btn" onclick="handleAuth()">进入聊天室</button>
-            <div id="login-tips" style="color:red; font-size:12px; margin-top:10px; min-height:15px"></div>
+            <div id="login-tips">初次使用输入账号即完成注册</div>
         </div>
     </div>
 
-    <!-- 2. 主应用界面 -->
+    <!-- 2. 主应用程序 -->
     <div id="main-app">
         <!-- 左侧侧边栏 -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <div id="my-avatar" class="avatar" onclick="openAvatarModal()" style="cursor:pointer">?</div>
+                <div id="my-avatar-view" class="avatar" style="cursor:pointer; border:2px solid rgba(255,255,255,0.3)">?</div>
                 <div style="flex:1">
-                    <div id="my-name-display" style="font-weight:bold; font-size:16px">载入中...</div>
-                    <div style="font-size:11px; opacity:0.8">在线</div>
+                    <div id="my-name-view" style="font-weight:bold; font-size:16px">正在同步...</div>
+                    <div style="font-size:11px; opacity:0.8">24H 云端在线</div>
                 </div>
-                <button onclick="createNewGroup()" style="background:rgba(255,255,255,0.2); border:none; color:white; border-radius:50%; width:30px; height:30px; cursor:pointer">+</button>
+                <button onclick="logout()" style="background:none; border:none; color:white; font-size:12px; cursor:pointer; opacity:0.7">退出</button>
             </div>
-            <!-- 联系人/群组列表容器 -->
-            <div class="user-list" id="contact-list-container">
-                <div style="padding:20px; color:#999; text-align:center; font-size:13px">正在寻找在线好友...</div>
+            
+            <!-- 好友/群组列表 -->
+            <div class="user-list" id="contact-list-view">
+                <!-- 列表由 JS 动态生成 -->
             </div>
         </div>
 
         <!-- 右侧聊天区域 -->
         <div class="chat-area">
             <div class="chat-header">
-                <div id="target-avatar" class="avatar" style="width:35px; height:35px; font-size:14px">?</div>
-                <div id="target-name-display">请选择聊天对象</div>
+                <div id="target-avatar-view" class="avatar" style="width:34px; height:34px; font-size:14px">?</div>
+                <div id="target-name-view">选择一个联系人</div>
             </div>
             
-            <!-- 消息显示区 -->
+            <!-- 消息显示窗口 -->
             <div id="messages-view">
-                <div style="margin:auto; color:#666; background:rgba(255,255,255,0.5); padding:10px 20px; border-radius:20px">
-                    从左侧选择好友开始私聊，或加入群组
-                </div>
+                <!-- 消息内容 -->
             </div>
 
-            <!-- 底部输入区 -->
+            <!-- 输入区域 -->
             <div class="chat-footer">
-                <input type="text" id="chat-input-box" class="tg-input" style="margin:0" placeholder="写消息..." autocomplete="off">
-                <button class="tg-btn" style="width:80px" onclick="performSend()">发送</button>
+                <input type="text" id="chat-input" class="tg-input" style="margin:0" placeholder="写消息..." autocomplete="off">
+                <button class="tg-btn" style="width:80px; margin:0" onclick="performSend()">发送</button>
             </div>
-        </div>
-    </div>
-
-    <!-- 3. 头像选择弹窗 -->
-    <div id="avatar-modal" onclick="closeAvatarModal()">
-        <div class="modal-body" onclick="event.stopPropagation()">
-            <!-- JS会自动在这里填充头像选项 -->
         </div>
     </div>
     <script>
-        // --- 1. 配置云端连接 ---
+        // --- 1. 云端核心配置 ---
         const URL = 'https://supabase.co';
         const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Z3lxeWdyeWVhbGlmbnhpbmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjk4MzcsImV4cCI6MjA5MzgwNTgzN30.2_coqJbBl95QcnollMK2F2JSPJXexIkwy4rpiaH8EYc';
         const _s = supabase.createClient(URL, KEY);
+        const avatarColors = ['#E57373', '#81C784', '#64B5F6', '#FFB74D', '#BA68C8'];
 
-        let myData = null;      // 存储当前登录用户信息
-        let targetChat = null;  // 当前正在聊天的对象（或群组）
-        let allUsers = [];      // 存储发现的所有用户
-        const avatarColors = ['#E57373', '#81C784', '#64B5F6', '#FFD54F', '#BA68C8', '#4DB6AC', '#FF8A65', '#90A4AE'];
+        let currentUser = null; // 当前登录的用户信息
+        let activeTarget = 'PUBLIC_GROUP'; // 当前选中的聊天对象
 
-        // --- 2. 登录与自动注册逻辑 ---
+        // --- 2. 身份验证逻辑 (登录/注册) ---
         async function handleAuth() {
-            const user = document.getElementById('auth-user').value.trim();
-            const pwd = document.getElementById('auth-pwd').value.trim();
+            const user = document.getElementById('login-username').value.trim();
+            const pwd = document.getElementById('login-password').value.trim();
             const tips = document.getElementById('login-tips');
 
-            if (!user || !pwd) { tips.innerText = "账号密码不能为空"; return; }
-            tips.innerText = "正在同步云端身份...";
+            if (!user || !pwd) { alert("账号密码不能为空"); return; }
+            tips.innerText = "⚡ 正在同步云端身份...";
 
-            // 尝试查找用户
-            let { data: existingUser, error } = await _s.from('users').select('*').eq('username', user).single();
+            // 尝试在云端查找该账号
+            let { data: u } = await _s.from('users').select('*').eq('username', user).maybeSingle();
 
-            if (existingUser) {
-                // 如果用户存在，校验密码
-                if (existingUser.password !== pwd) {
-                    tips.innerText = "密码错误，请重试";
+            if (u) {
+                // 如果存在，校验密码
+                if (u.password !== pwd) {
+                    tips.innerText = "❌ 密码错误，请重试";
+                    tips.style.color = 'red';
                     return;
                 }
-                myData = existingUser;
+                currentUser = u;
             } else {
-                // 如果用户不存在，自动创建（注册）
-                const { data: newUser, error: regError } = await _s.from('users').insert([
-                    { username: user, password: pwd, avatar_index: Math.floor(Math.random() * 8) }
+                // 如果不存在，自动创建新账号 (注册)
+                const { data: newUser, error: regErr } = await _s.from('users').insert([
+                    { username: user, password: pwd, avatar_index: Math.floor(Math.random() * 5) }
                 ]).select().single();
                 
-                if (regError) { tips.innerText = "注册失败: " + regError.message; return; }
-                myData = newUser;
+                if (regErr) { tips.innerText = "注册失败，请检查网络"; return; }
+                currentUser = newUser;
             }
 
-            // 登录成功，进入主界面
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('main-app').style.display = 'grid';
-            startApp();
+            // 保存登录状态到本地 (下次免登录)
+            localStorage.setItem('tg_pro_user', JSON.stringify(currentUser));
+            enterApp();
         }
 
-        // --- 3. 头像渲染逻辑 ---
-        function getAvatarHTML(userObj, size = 48) {
-            const char = userObj.username.charAt(0).toUpperCase();
-            const color = avatarColors[userObj.avatar_index % avatarColors.length];
-            return `<div class="avatar" style="width:${size}px; height:${size}px; background:${color}; font-size:${size/2.2}px">${char}</div>`;
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('tg_pro_user');
+            location.reload();
         }
 
-        function openAvatarModal() {
-            const modal = document.getElementById('avatar-modal');
-            const content = modal.querySelector('.modal-body');
-            content.innerHTML = '';
-            avatarColors.forEach((color, index) => {
-                const div = document.createElement('div');
-                div.className = 'avatar';
-                div.style.background = color;
-                div.style.cursor = 'pointer';
-                div.innerText = myData.username.charAt(0).toUpperCase();
-                div.onclick = () => updateMyAvatar(index);
-                content.appendChild(div);
-            });
-            modal.style.display = 'flex';
+        // 进入主界面
+        function enterApp() {
+            document.getElementById('login-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'grid';
+                startSync(); // 开启同步引擎
+            }, 500);
         }
+        // --- 3. 核心应用引擎 (同步与渲染) ---
+        function startSync() {
+            // 渲染我的个人信息
+            const myNameView = document.getElementById('my-name-view');
+            const myAvView = document.getElementById('my-avatar-view');
+            myNameView.innerText = currentUser.username;
+            myAvView.innerText = currentUser.username.charAt(0).toUpperCase();
+            myAvView.style.background = avatarColors[currentUser.avatar_index];
 
-        async function updateMyAvatar(index) {
-            const { error } = await _s.from('users').update({ avatar_index: index }).eq('id', myData.id);
-            if (!error) {
-                myData.avatar_index = index;
-                renderMyInfo();
-                document.getElementById('avatar-modal').style.display = 'none';
-            }
-        }
-        // --- 4. 核心应用逻辑 ---
-        async function startApp() {
-            renderMyInfo();
-            await refreshContacts();
-            
-            // 每 5 秒刷新一次联系人列表（看谁新上线了）
-            setInterval(refreshContacts, 5000);
-            // 每 3 秒同步一次当前聊天的消息
-            setInterval(syncMessages, 3000);
-        }
+            // 初始加载
+            refreshContacts();
+            syncMessages();
 
-        function renderMyInfo() {
-            document.getElementById('my-avatar').innerHTML = myData.username.charAt(0).toUpperCase();
-            document.getElementById('my-avatar').style.background = avatarColors[myData.avatar_index % avatarColors.length];
-            document.getElementById('my-name-display').innerText = myData.username;
+            // 开启定时任务
+            setInterval(refreshContacts, 5000); // 5秒刷新一次联系人列表
+            setInterval(syncMessages, 3000);    // 3秒同步一次消息
         }
 
         // 刷新联系人列表
         async function refreshContacts() {
-            const { data: users } = await _s.from('users').select('*').neq('username', myData.username);
-            if (!users) return;
-            allUsers = users;
+            const { data: users } = await _s.from('users').select('*').neq('username', currentUser.username);
+            const listContainer = document.getElementById('contact-list-view');
+            
+            // 默认添加公共大群
+            let html = `
+                <div class="contact-item ${activeTarget === 'PUBLIC_GROUP' ? 'active' : ''}" onclick="switchChat('PUBLIC_GROUP', '公共大群', '#f39c12')">
+                    <div class="avatar" style="background:#f39c12">G</div>
+                    <div style="flex:1">
+                        <div style="font-weight:bold">公共大群</div>
+                        <div style="font-size:11px; color:#888">大家都在这里</div>
+                    </div>
+                </div>
+            `;
 
-            const container = document.getElementById('contact-list-container');
-            container.innerHTML = '';
-
-            // 增加一个固定的“公共大群”选项
-            const groupItem = document.createElement('div');
-            groupItem.className = `contact-item ${targetChat === 'PUBLIC_GROUP' ? 'active' : ''}`;
-            groupItem.innerHTML = `<div class="avatar" style="background:#f39c12">G</div><div><b>公共大群</b><div style="font-size:10px;color:#888">大家都能聊</div></div>`;
-            groupItem.onclick = () => selectChat('PUBLIC_GROUP', '公共大群', '#f39c12');
-            container.appendChild(groupItem);
-
-            // 渲染其他在线用户（私聊对象）
-            users.forEach(u => {
-                const item = document.createElement('div');
-                item.className = `contact-item ${targetChat === u.username ? 'active' : ''}`;
-                const color = avatarColors[u.avatar_index % avatarColors.length];
-                item.innerHTML = `
-                    <div class="avatar" style="background:${color}">${u.username.charAt(0).toUpperCase()}</div>
-                    <div>
-                        <b>${u.username}</b>
-                        <div style="font-size:10px;color:#888">点击开始私聊</div>
+            // 循环渲染所有发现的云端用户
+            users?.forEach(u => {
+                const color = avatarColors[u.avatar_index];
+                html += `
+                    <div class="contact-item ${activeTarget === u.username ? 'active' : ''}" onclick="switchChat('${u.username}', '${u.username}', '${color}')">
+                        <div class="avatar" style="background:${color}">${u.username.charAt(0).toUpperCase()}</div>
+                        <div style="flex:1">
+                            <div style="font-weight:bold">${u.username}</div>
+                            <div style="font-size:11px; color:#888">点击开始私聊</div>
+                        </div>
                     </div>
                 `;
-                item.onclick = () => selectChat(u.username, u.username, color);
-                container.appendChild(item);
             });
+            listContainer.innerHTML = html;
         }
 
-        // 选择聊天对象
-        function selectChat(id, name, color) {
-            targetChat = id;
-            document.getElementById('target-name-display').innerText = name;
-            document.getElementById('target-avatar').innerText = name.charAt(0).toUpperCase();
-            document.getElementById('target-avatar').style.background = color;
-            document.getElementById('messages-view').innerHTML = '<div style="text-align:center;color:#999">正在同步记录...</div>';
-            window.renderedMsgIds = new Set(); // 切换时清空已渲染记录
-            refreshContacts(); // 更新左侧高亮
-            syncMessages();
+        // 切换聊天目标
+        function switchChat(id, name, color) {
+            activeTarget = id;
+            const headerName = document.getElementById('target-name-view');
+            const headerAv = document.getElementById('target-avatar-view');
+            
+            headerName.innerText = name;
+            headerAv.innerText = name.charAt(0).toUpperCase();
+            headerAv.style.background = color;
+            
+            // 清空旧消息并重置渲染记录
+            document.getElementById('messages-view').innerHTML = '';
+            window.renderedIds = new Set();
+            
+            refreshContacts(); // 刷新左侧选中状态
+            syncMessages();    // 立即尝试同步一次
         }
 
-        // 生成唯一的房间ID（用于隔离私聊）
+        // 计算唯一的房间 ID (区分私聊和公聊)
         function getRoomId() {
-            if (targetChat === 'PUBLIC_GROUP') return 'PUBLIC_GROUP';
-            // 私聊时，将两个用户名按字母排序组合，确保 A聊B 和 B聊A 是同一个房间
-            return [myData.username, targetChat].sort().join('_VS_');
+            if (activeTarget === 'PUBLIC_GROUP') return 'PUBLIC_DOMAIN';
+            // 将两个人的名字按字母排序后组合，确保唯一性
+            return [currentUser.username, activeTarget].sort().join('_VS_');
         }
-        // --- 5. 消息同步与显示 ---
+        // --- 4. 消息同步与显示 ---
         async function syncMessages() {
-            if (!targetChat) return;
+            if (!currentUser || !activeTarget) return;
             const currentRoom = getRoomId();
 
-            // 从云端只获取属于当前房间的消息
+            // 从云端获取属于当前房间的消息
             const { data: msgs, error } = await _s.from('messages')
                 .select('*')
                 .eq('room_id', currentRoom)
@@ -269,78 +254,62 @@
             if (error) return;
 
             const view = document.getElementById('messages-view');
-            if (!window.renderedMsgIds) window.renderedMsgIds = new Set();
+            if (!window.renderedIds) window.renderedIds = new Set();
 
-            // 如果是第一次加载或切换聊天，清空视图
-            if (window.renderedMsgIds.size === 0) view.innerHTML = '';
-
-            msgs.forEach(m => {
-                // 使用数据库 ID 防止重复渲染
-                if (!window.renderedMsgIds.has(m.id)) {
-                    renderSingleMessage(m);
-                    window.renderedMsgIds.add(m.id);
+            msgs?.forEach(m => {
+                // 使用数据库 ID 防止重复显示
+                if (!window.renderedIds.has(m.id)) {
+                    const isMe = m.username === currentUser.username;
+                    const div = document.createElement('div');
+                    div.className = `msg-bubble ${isMe ? 'sent' : 'received'}`;
+                    
+                    div.innerHTML = `
+                        <div class="msg-user">${m.username}</div>
+                        <div>${m.content}</div>
+                    `;
+                    view.appendChild(div);
+                    view.scrollTop = view.scrollHeight; // 自动滚到底部
+                    window.renderedIds.add(m.id);
                 }
             });
         }
 
-        function renderSingleMessage(m) {
-            const view = document.getElementById('messages-view');
-            const isMe = m.username === myData.username;
-            const div = document.createElement('div');
-            div.className = `msg-bubble ${isMe ? 'sent' : 'received'}`;
-            
-            // 格式化时间
-            const time = new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            
-            div.innerHTML = `
-                <div style="font-size:11px; font-weight:bold; color:${isMe ? '#4a7c44' : '#3a6d99'}">${m.username}</div>
-                <div>${m.content}</div>
-                <div class="msg-info">${time}</div>
-            `;
-            view.appendChild(div);
-            view.scrollTop = view.scrollHeight;
-        }
-
-        // --- 6. 发送消息 ---
+        // --- 5. 发送消息逻辑 ---
         window.performSend = async function() {
-            if (!targetChat) { alert("请先选择一个聊天对象"); return; }
-            const input = document.getElementById('chat-input-box');
+            const input = document.getElementById('chat-input');
             const val = input.value.trim();
-            if (!val) return;
+            if (!val || !currentUser) return;
 
             const currentRoom = getRoomId();
-            input.value = '';
+            input.value = ''; // 清空输入框
 
-            // 发送消息到云端，带上 room_id 标识
+            // 存入云端
             const { error } = await _s.from('messages').insert([
                 { 
-                    username: myData.username, 
+                    username: currentUser.username, 
                     content: val, 
-                    room_id: currentRoom,
-                    avatar_index: myData.avatar_index 
+                    room_id: currentRoom 
                 }
             ]);
 
-            if (error) alert("发送失败: " + error.message);
-            else syncMessages(); // 立即同步
+            if (error) alert("发送失败，请检查网络");
+            else syncMessages(); // 立即刷新
         };
 
-        // 绑定功能
-        document.getElementById('chat-input-box').addEventListener('keypress', e => {
+        // --- 6. 自动化绑定与初始化 ---
+        // 绑定回车键
+        document.getElementById('chat-input').addEventListener('keypress', e => {
             if (e.key === 'Enter') performSend();
         });
 
-        function createNewGroup() {
-            const groupName = prompt("请输入群组名称:");
-            if (groupName) {
-                // 建群本质上是开启一个特殊的 room_id
-                selectChat('GROUP_' + groupName, "[群] " + groupName, '#9b59b6');
+        // 【核心功能】：自动登录检测
+        window.onload = () => {
+            const savedUser = localStorage.getItem('tg_pro_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                enterApp(); // 如果本地有账号，跳过登录直接进入
             }
-        }
-
-        function closeAvatarModal() {
-            document.getElementById('avatar-modal').style.display = 'none';
-        }
+        };
     </script>
 </body>
 </html>
