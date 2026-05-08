@@ -142,19 +142,26 @@
         setInterval(loadMessages, 3000);
     }
 
-    async function loadMessages() {
-        const { data, error } = await _s.from('messages').select('*');
+        async function loadMessages() {
+        const { data, error } = await _s.from('messages').select('*').order('created_at', { ascending: true });
         if (error) return;
         
         const chatBox = document.getElementById('chat');
-        // 只渲染新消息
+        
+        // 关键修复：直接对比内容和时间，确保新消息一定能弹出来
         data.forEach(m => {
-            if (m.id > (lastId || 0)) {
+            // 使用消息内容和时间的组合作为唯一标识，防止重复
+            const msgKey = m.username + m.content + m.created_at;
+            if (!window.renderedMsgs) window.renderedMsgs = new Set();
+            
+            if (!window.renderedMsgs.has(msgKey)) {
                 addMessageToScreen(m);
+                window.renderedMsgs.add(msgKey);
                 lastId = m.id;
             }
         });
     }
+
 
     function addMessageToScreen(m) {
         const d = document.createElement('div');
