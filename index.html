@@ -3,224 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>云端聊天室-全内置版</title>
+    <title>Cloud Telegram Pro</title>
+    <!-- 加载 Supabase 功能库 -->
+    <script src="https://jsdelivr.net"></script>
     <style>
-        body { font-family: sans-serif; background: #e7ebf0; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        header { background: #517da2; color: white; padding: 15px; text-align: center; font-weight: bold; }
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: white; padding: 10px; border-radius: 10px; align-self: flex-start; max-width: 75%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .msg.me { background: #effdde; align-self: flex-end; }
-        footer { background: white; padding: 15px; display: flex; gap: 10px; border-top: 1px solid #ddd; }
-        input { flex: 1; border: 1px solid #ccc; padding: 10px 15px; border-radius: 20px; outline: none; }
-        button { background: #517da2; color: white; border: none; padding: 0 20px; border-radius: 20px; cursor: pointer; }
+        :root { --tg-blue: #517da2; --tg-bg: #e7ebf0; --tg-sent: #effdde; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: var(--tg-bg); overflow: hidden; }
+        
+        /* 登录遮罩层 */
+        #login-screen { position: fixed; inset: 0; background: white; z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .login-box { width: 320px; text-align: center; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 15px; }
+        .tg-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #dfe1e5; border-radius: 10px; box-sizing: border-box; outline: none; font-size: 16px; }
+        .tg-btn { width: 100%; padding: 12px; background: var(--tg-blue); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; }
+
+        /* 主界面 - 左右分栏 */
+        #main-app { display: none; height: 100vh; grid-template-columns: 300px 1fr; }
+        
+        /* 左侧侧边栏 */
+        .sidebar { background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 10; }
+        .sidebar-header { padding: 15px; background: var(--tg-blue); color: white; display: flex; align-items: center; gap: 12px; }
+        .user-list { flex: 1; overflow-y: auto; }
+        .contact-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #f5f5f5; transition: 0.2s; }
+        .contact-item:hover { background: #f0f4f8; }
+        .contact-item.active { background: #e3f2fd; border-left: 4px solid var(--tg-blue); }
+        
+        /* 头像通用样式 */
+        .avatar { width: 48px; height: 48px; border-radius: 50%; background: #517da2; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; flex-shrink: 0; position: relative; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* 右侧聊天区 */
+        .chat-area { display: flex; flex-direction: column; background-image: url('https://githubusercontent.com'); background-size: cover; }
+        .chat-header { padding: 12px 20px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 12px; font-weight: bold; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
+        #messages-view { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        
+        /* 气泡样式 */
+        .msg-bubble { max-width: 70%; padding: 8px 12px; border-radius: 12px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
+        .msg-bubble.sent { align-self: flex-end; background: var(--tg-sent); border-bottom-right-radius: 2px; }
+        .msg-bubble.received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
+        .msg-info { font-size: 11px; color: #888; margin-top: 4px; text-align: right; }
+
+        /* 底部输入框 */
+        .chat-footer { padding: 15px; background: white; display: flex; gap: 10px; border-top: 1px solid #ddd; }
+        
+        /* 头像切换弹窗 */
+        #avatar-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-body { background: white; padding: 20px; border-radius: 15px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     </style>
 </head>
 <body>
-    <header id="status">🌐 正在启动本地云端引擎...</header>
-    <div id="chat"></div>
-    <footer>
-        <input id="ipt" placeholder="输入消息..." autocomplete="off">
-        <button onclick="sendMsg()">发送</button>
-    </footer>
-    <script>
-(function(global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (factory((global.supabase = {})));
-}(this, (function(exports) { 'use strict';
-    var __defProp = Object.defineProperty;
-    var __defProps = Object.defineProperties;
-    var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
-    var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-    var __hasOwnProp = Object.prototype.hasOwnProperty;
-    var __propIsEnum = Object.prototype.propertyIsEnumerable;
-    var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-    var __spreadValues = (a, b) => {
-        for (var prop in b || (b = {})) if (__hasOwnProp.call(b, prop)) __defNormalProp(a, prop, b[prop]);
-        if (__getOwnPropSymbols) for (var prop of __getOwnPropSymbols(b)) if (__propIsEnum.call(b, prop)) __defNormalProp(a, prop, b[prop]);
-        return a;
-    };
-    var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 
-    // 存储管理
-    class StorageHelpers {
-        static getItem(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
-        static setItem(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
-    }
+    <!-- 1. 登录/注册界面 -->
+    <div id="login-screen">
+        <div class="login-box">
+            <img src="https://wikimedia.org" width="70" style="margin-bottom:15px">
+            <h2 style="color:#222; margin-bottom:5px">Cloud Telegram Pro</h2>
+            <p style="color:#888; font-size:14px; margin-bottom:20px">登录以同步你的云端消息</p>
+            <input type="text" id="auth-user" class="tg-input" placeholder="输入用户名 (由字母/数字组成)">
+            <input type="password" id="auth-pwd" class="tg-input" placeholder="输入密码">
+            <button class="tg-btn" onclick="handleAuth()">进入聊天室</button>
+            <div id="login-tips" style="color:red; font-size:12px; margin-top:10px; min-height:15px"></div>
+        </div>
+    </div>
 
-    exports.createClient = function(supabaseUrl, supabaseKey, options) {
-        return new SupabaseClient(supabaseUrl, supabaseKey, options);
-    };
+    <!-- 2. 主应用界面 -->
+    <div id="main-app">
+        <!-- 左侧侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div id="my-avatar" class="avatar" onclick="openAvatarModal()" style="cursor:pointer">?</div>
+                <div style="flex:1">
+                    <div id="my-name-display" style="font-weight:bold; font-size:16px">载入中...</div>
+                    <div style="font-size:11px; opacity:0.8">在线</div>
+                </div>
+                <button onclick="createNewGroup()" style="background:rgba(255,255,255,0.2); border:none; color:white; border-radius:50%; width:30px; height:30px; cursor:pointer">+</button>
+            </div>
+            <!-- 联系人/群组列表容器 -->
+            <div class="user-list" id="contact-list-container">
+                <div style="padding:20px; color:#999; text-align:center; font-size:13px">正在寻找在线好友...</div>
+            </div>
+        </div>
 
-    class SupabaseClient {
-        constructor(supabaseUrl, supabaseKey, options) {
-            this.supabaseUrl = supabaseUrl;
-            this.supabaseKey = supabaseKey;
-            this.auth = new AuthClient(supabaseUrl, supabaseKey);
-            this.realtime = new RealtimeClient(supabaseUrl, supabaseKey);
-        }
-        from(table) {
-            return new QueryBuilder(this.supabaseUrl, this.supabaseKey, table);
-        }
-        channel(name) {
-            return this.realtime.channel(name);
-        }
-    }
-    class QueryBuilder {
-        constructor(url, key, table) {
-            this.url = `${url}/rest/v1/${table}`;
-            this.key = key;
-        }
-        async select(columns = '*') {
-            const res = await fetch(`${this.url}?select=${columns}`, {
-                headers: { 'apikey': this.key, 'Authorization': `Bearer ${this.key}` }
-            });
-            const data = await res.json();
-            return { data, error: res.ok ? null : data };
-        }
-        async insert(values) {
-            const res = await fetch(this.url, {
-                method: 'POST',
-                headers: { 
-                    'apikey': this.key, 
-                    'Authorization': `Bearer ${this.key}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=representation'
-                },
-                body: JSON.stringify(values)
-            });
-            const data = await res.json();
-            return { data, error: res.ok ? null : data };
-        }
-    }
-
-    class AuthClient {
-        constructor(url, key) { this.url = url; this.key = key; }
-    }
-
-    class RealtimeClient {
-        constructor(url, key) {
-            this.url = url.replace('http', 'ws') + '/realtime/v1';
-            this.key = key;
-        }
-        channel(name) {
-            return {
-                on: (type, filter, callback) => {
-                    // 简化的监听逻辑：每3秒自动拉取一次实现“伪实时”
-                    // 这样可以绕过复杂的 WebSocket 网络封锁
-                    setInterval(async () => {
-                        const res = await fetch(`${URL}/rest/v1/messages?order=created_at.desc&limit=1`, {
-                            headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` }
-                        });
-                        const data = await res.json();
-                        if (data && data[0]) callback({ new: data[0] });
-                    }, 3000);
-                    return { subscribe: () => {} };
-                }
-            };
-        }
-    }
-})));
-    // --- 5. 你的专属配置 ---
-    const URL = 'https://supabase.co';
-    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Z3lxeWdyeWVhbGlmbnhpbmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjk4MzcsImV4cCI6MjA5MzgwNTgzN30.2_coqJbBl95QcnollMK2F2JSPJXexIkwy4rpiaH8EYc';
-
-    // 初始化客户端
-    const _s = supabase.createClient(URL, KEY);
-    let user, lastId = null;
-
-        // 1. 修改启动逻辑：确保每 3 秒检查一次云端
-    async function init() {
-        user = localStorage.getItem('chat_u') || prompt("云端连接成功！请输入聊天昵称") || "访客";
-        localStorage.setItem('chat_u', user);
-        document.getElementById('status').innerText = "✅ 云端已连接 | 昵称: " + user;
-        
-        // 立即执行一次加载
-        await loadMessages();
-        
-        // 【核心修复】：每隔 3 秒钟，强制去云端拿一次所有人的新消息
-        setInterval(async () => {
-            await loadMessages();
-        }, 3000); 
-    }
-
-    // 2. 修改加载逻辑：确保不漏掉别人的消息
-    async function loadMessages() {
-        // 从云端拿取最新的消息记录
-        const { data, error } = await _s.from('messages').select('*');
-        if (error || !data) return;
-        
-        if (!window.renderedMsgs) window.renderedMsgs = new Set();
-        
-        data.forEach(m => {
-            // 使用“用户名+内容”作为唯一指纹，防止重复显示
-            const msgKey = m.username + m.content; 
-            if (!window.renderedMsgs.has(msgKey)) {
-                addMessageToScreen(m);
-                window.renderedMsgs.add(msgKey);
-            }
-        });
-    }
-
-
-        async function loadMessages() {
-        const { data, error } = await _s.from('messages').select('*').order('created_at', { ascending: true });
-        if (error) return;
-        
-        const chatBox = document.getElementById('chat');
-        
-        // 关键修复：直接对比内容和时间，确保新消息一定能弹出来
-        data.forEach(m => {
-            // 使用消息内容和时间的组合作为唯一标识，防止重复
-            const msgKey = m.username + m.content + m.created_at;
-            if (!window.renderedMsgs) window.renderedMsgs = new Set();
+        <!-- 右侧聊天区域 -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div id="target-avatar" class="avatar" style="width:35px; height:35px; font-size:14px">?</div>
+                <div id="target-name-display">请选择聊天对象</div>
+            </div>
             
-            if (!window.renderedMsgs.has(msgKey)) {
-                addMessageToScreen(m);
-                window.renderedMsgs.add(msgKey);
-                lastId = m.id;
+            <!-- 消息显示区 -->
+            <div id="messages-view">
+                <div style="margin:auto; color:#666; background:rgba(255,255,255,0.5); padding:10px 20px; border-radius:20px">
+                    从左侧选择好友开始私聊，或加入群组
+                </div>
+            </div>
+
+            <!-- 底部输入区 -->
+            <div class="chat-footer">
+                <input type="text" id="chat-input-box" class="tg-input" style="margin:0" placeholder="写消息..." autocomplete="off">
+                <button class="tg-btn" style="width:80px" onclick="performSend()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 头像选择弹窗 -->
+    <div id="avatar-modal" onclick="closeAvatarModal()">
+        <div class="modal-body" onclick="event.stopPropagation()">
+            <!-- JS会自动在这里填充头像选项 -->
+        </div>
+    </div>
+    <script>
+        // --- 1. 配置云端连接 ---
+        const URL = 'https://supabase.co';
+        const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Z3lxeWdyeWVhbGlmbnhpbmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjk4MzcsImV4cCI6MjA5MzgwNTgzN30.2_coqJbBl95QcnollMK2F2JSPJXexIkwy4rpiaH8EYc';
+        const _s = supabase.createClient(URL, KEY);
+
+        let myData = null;      // 存储当前登录用户信息
+        let targetChat = null;  // 当前正在聊天的对象（或群组）
+        let allUsers = [];      // 存储发现的所有用户
+        const avatarColors = ['#E57373', '#81C784', '#64B5F6', '#FFD54F', '#BA68C8', '#4DB6AC', '#FF8A65', '#90A4AE'];
+
+        // --- 2. 登录与自动注册逻辑 ---
+        async function handleAuth() {
+            const user = document.getElementById('auth-user').value.trim();
+            const pwd = document.getElementById('auth-pwd').value.trim();
+            const tips = document.getElementById('login-tips');
+
+            if (!user || !pwd) { tips.innerText = "账号密码不能为空"; return; }
+            tips.innerText = "正在同步云端身份...";
+
+            // 尝试查找用户
+            let { data: existingUser, error } = await _s.from('users').select('*').eq('username', user).single();
+
+            if (existingUser) {
+                // 如果用户存在，校验密码
+                if (existingUser.password !== pwd) {
+                    tips.innerText = "密码错误，请重试";
+                    return;
+                }
+                myData = existingUser;
+            } else {
+                // 如果用户不存在，自动创建（注册）
+                const { data: newUser, error: regError } = await _s.from('users').insert([
+                    { username: user, password: pwd, avatar_index: Math.floor(Math.random() * 8) }
+                ]).select().single();
+                
+                if (regError) { tips.innerText = "注册失败: " + regError.message; return; }
+                myData = newUser;
             }
-        });
-    }
 
-
-    function addMessageToScreen(m) {
-        const d = document.createElement('div');
-        const isMe = m.username === user;
-        d.className = 'msg' + (isMe ? ' me' : '');
-        d.innerHTML = `<div style="font-size:10px;color:#3a6d99">${m.username}</div>${m.content}`;
-        document.getElementById('chat').appendChild(d);
-        document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
-    }
-
-       // 发送功能 - 增强版
-    window.sendMsg = async function() {
-        const input = document.getElementById('ipt');
-        const val = input.value.trim();
-        if (!val) return;
-        
-        // 1. 先在本地屏幕上显示消息（增强反馈感）
-        addMessageToScreen({ username: user, content: val, created_at: new Date().toISOString() });
-        input.value = '';
-
-        // 2. 发送到云端
-        const { error } = await _s.from('messages').insert([{ username: user, content: val }]);
-        
-        if (error) {
-            console.error("发送失败:", error);
-            alert("云端同步失败，请检查网络");
-        } else {
-            // 3. 发送成功后立刻拉取一次最新数据
-            loadMessages();
+            // 登录成功，进入主界面
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'grid';
+            startApp();
         }
-    };
 
+        // --- 3. 头像渲染逻辑 ---
+        function getAvatarHTML(userObj, size = 48) {
+            const char = userObj.username.charAt(0).toUpperCase();
+            const color = avatarColors[userObj.avatar_index % avatarColors.length];
+            return `<div class="avatar" style="width:${size}px; height:${size}px; background:${color}; font-size:${size/2.2}px">${char}</div>`;
+        }
 
-    // 绑定回车
-    document.getElementById('ipt').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
+        function openAvatarModal() {
+            const modal = document.getElementById('avatar-modal');
+            const content = modal.querySelector('.modal-body');
+            content.innerHTML = '';
+            avatarColors.forEach((color, index) => {
+                const div = document.createElement('div');
+                div.className = 'avatar';
+                div.style.background = color;
+                div.style.cursor = 'pointer';
+                div.innerText = myData.username.charAt(0).toUpperCase();
+                div.onclick = () => updateMyAvatar(index);
+                content.appendChild(div);
+            });
+            modal.style.display = 'flex';
+        }
 
-    init();
+        async function updateMyAvatar(index) {
+            const { error } = await _s.from('users').update({ avatar_index: index }).eq('id', myData.id);
+            if (!error) {
+                myData.avatar_index = index;
+                renderMyInfo();
+                document.getElementById('avatar-modal').style.display = 'none';
+            }
+        }
+        // --- 4. 核心应用逻辑 ---
+        async function startApp() {
+            renderMyInfo();
+            await refreshContacts();
+            
+            // 每 5 秒刷新一次联系人列表（看谁新上线了）
+            setInterval(refreshContacts, 5000);
+            // 每 3 秒同步一次当前聊天的消息
+            setInterval(syncMessages, 3000);
+        }
+
+        function renderMyInfo() {
+            document.getElementById('my-avatar').innerHTML = myData.username.charAt(0).toUpperCase();
+            document.getElementById('my-avatar').style.background = avatarColors[myData.avatar_index % avatarColors.length];
+            document.getElementById('my-name-display').innerText = myData.username;
+        }
+
+        // 刷新联系人列表
+        async function refreshContacts() {
+            const { data: users } = await _s.from('users').select('*').neq('username', myData.username);
+            if (!users) return;
+            allUsers = users;
+
+            const container = document.getElementById('contact-list-container');
+            container.innerHTML = '';
+
+            // 增加一个固定的“公共大群”选项
+            const groupItem = document.createElement('div');
+            groupItem.className = `contact-item ${targetChat === 'PUBLIC_GROUP' ? 'active' : ''}`;
+            groupItem.innerHTML = `<div class="avatar" style="background:#f39c12">G</div><div><b>公共大群</b><div style="font-size:10px;color:#888">大家都能聊</div></div>`;
+            groupItem.onclick = () => selectChat('PUBLIC_GROUP', '公共大群', '#f39c12');
+            container.appendChild(groupItem);
+
+            // 渲染其他在线用户（私聊对象）
+            users.forEach(u => {
+                const item = document.createElement('div');
+                item.className = `contact-item ${targetChat === u.username ? 'active' : ''}`;
+                const color = avatarColors[u.avatar_index % avatarColors.length];
+                item.innerHTML = `
+                    <div class="avatar" style="background:${color}">${u.username.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <b>${u.username}</b>
+                        <div style="font-size:10px;color:#888">点击开始私聊</div>
+                    </div>
+                `;
+                item.onclick = () => selectChat(u.username, u.username, color);
+                container.appendChild(item);
+            });
+        }
+
+        // 选择聊天对象
+        function selectChat(id, name, color) {
+            targetChat = id;
+            document.getElementById('target-name-display').innerText = name;
+            document.getElementById('target-avatar').innerText = name.charAt(0).toUpperCase();
+            document.getElementById('target-avatar').style.background = color;
+            document.getElementById('messages-view').innerHTML = '<div style="text-align:center;color:#999">正在同步记录...</div>';
+            window.renderedMsgIds = new Set(); // 切换时清空已渲染记录
+            refreshContacts(); // 更新左侧高亮
+            syncMessages();
+        }
+
+        // 生成唯一的房间ID（用于隔离私聊）
+        function getRoomId() {
+            if (targetChat === 'PUBLIC_GROUP') return 'PUBLIC_GROUP';
+            // 私聊时，将两个用户名按字母排序组合，确保 A聊B 和 B聊A 是同一个房间
+            return [myData.username, targetChat].sort().join('_VS_');
+        }
+        // --- 5. 消息同步与显示 ---
+        async function syncMessages() {
+            if (!targetChat) return;
+            const currentRoom = getRoomId();
+
+            // 从云端只获取属于当前房间的消息
+            const { data: msgs, error } = await _s.from('messages')
+                .select('*')
+                .eq('room_id', currentRoom)
+                .order('created_at', { ascending: true });
+
+            if (error) return;
+
+            const view = document.getElementById('messages-view');
+            if (!window.renderedMsgIds) window.renderedMsgIds = new Set();
+
+            // 如果是第一次加载或切换聊天，清空视图
+            if (window.renderedMsgIds.size === 0) view.innerHTML = '';
+
+            msgs.forEach(m => {
+                // 使用数据库 ID 防止重复渲染
+                if (!window.renderedMsgIds.has(m.id)) {
+                    renderSingleMessage(m);
+                    window.renderedMsgIds.add(m.id);
+                }
+            });
+        }
+
+        function renderSingleMessage(m) {
+            const view = document.getElementById('messages-view');
+            const isMe = m.username === myData.username;
+            const div = document.createElement('div');
+            div.className = `msg-bubble ${isMe ? 'sent' : 'received'}`;
+            
+            // 格式化时间
+            const time = new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            div.innerHTML = `
+                <div style="font-size:11px; font-weight:bold; color:${isMe ? '#4a7c44' : '#3a6d99'}">${m.username}</div>
+                <div>${m.content}</div>
+                <div class="msg-info">${time}</div>
+            `;
+            view.appendChild(div);
+            view.scrollTop = view.scrollHeight;
+        }
+
+        // --- 6. 发送消息 ---
+        window.performSend = async function() {
+            if (!targetChat) { alert("请先选择一个聊天对象"); return; }
+            const input = document.getElementById('chat-input-box');
+            const val = input.value.trim();
+            if (!val) return;
+
+            const currentRoom = getRoomId();
+            input.value = '';
+
+            // 发送消息到云端，带上 room_id 标识
+            const { error } = await _s.from('messages').insert([
+                { 
+                    username: myData.username, 
+                    content: val, 
+                    room_id: currentRoom,
+                    avatar_index: myData.avatar_index 
+                }
+            ]);
+
+            if (error) alert("发送失败: " + error.message);
+            else syncMessages(); // 立即同步
+        };
+
+        // 绑定功能
+        document.getElementById('chat-input-box').addEventListener('keypress', e => {
+            if (e.key === 'Enter') performSend();
+        });
+
+        function createNewGroup() {
+            const groupName = prompt("请输入群组名称:");
+            if (groupName) {
+                // 建群本质上是开启一个特殊的 room_id
+                selectChat('GROUP_' + groupName, "[群] " + groupName, '#9b59b6');
+            }
+        }
+
+        function closeAvatarModal() {
+            document.getElementById('avatar-modal').style.display = 'none';
+        }
     </script>
 </body>
 </html>
-
