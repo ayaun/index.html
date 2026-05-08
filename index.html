@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Telegram Pro - 最终修正版</title>
+    <title>Cloud Telegram Pro - 最终通车版</title>
     <script>
-    /* 核心驱动内置：彻底解决网络导致的库加载失败 */
-    (function(g,f){typeof exports==='object'&&typeof module!=='undefined'?f(exports):typeof define==='function'&&define.amd?define(['exports'],f):(f((g.supabase={})));}(this,(function(exports){'use strict';exports.createClient=function(u,k){return{from:function(t){return{select:function(q){return{eq:function(f,v){return{maybeSingle:function(){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*`,{headers:{apikey:k,Authorization:`Bearer ${k}`}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))},single:function(){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*`,{headers:{apikey:k,Authorization:`Bearer ${k}`,Accept:'application/vnd.pgrst.object+json'}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}},insert:function(v){return{select:function(){return{single:function(){return fetch(`${u}/rest/v1/${t}`,{method:'POST',headers:{apikey:k,Authorization:`Bearer ${k}`,'Content-Type':'application/json',Prefer:'return=representation' },body:JSON.stringify(v)}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}},update:function(v){return{eq:function(f,id){return fetch(`${u}/rest/v1/${t}?${f}=eq.${id}`,{method:'PATCH',headers:{apikey:k,Authorization:`Bearer ${k}`,'Content-Type':'application/json'},body:JSON.stringify(v)}).then(r=>({error:r.ok?null:r}))}}},order:function(c,o){return{eq:function(f,v){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*&order=${c}.${o.ascending?'asc':'desc'}`,{headers:{apikey:k,Authorization:`Bearer ${k}`}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}}}};})));
+    /* 核心驱动内置：彻底解决所有网络导致的加载报错 */
+    (function(g,f){typeof exports==='object'&&typeof module!=='undefined'?f(exports):typeof define==='function'&&define.amd?define(['exports'],f):(f((g.supabase={})));}(this,(function(exports){'use strict';exports.createClient=function(u,k){return{from:function(t){return{select:function(q){return{eq:function(f,v){return{maybeSingle:function(){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*`,{headers:{apikey:k,Authorization:`Bearer ${k}`}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))},single:function(){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*`,{headers:{apikey:k,Authorization:`Bearer ${k}`,Accept:'application/vnd.pgrst.object+json'}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}},insert:function(v){return{select:function(){return{single:function(){return fetch(`${u}/rest/v1/${t}`,{method:'POST',headers:{apikey:k,Authorization:`Bearer ${k}`,'Content-Type':'application/json',Prefer:'return=representation' },body:JSON.stringify(v)}).then(r=>r.json().then(d=>({data:r.ok?(Array.isArray(d)?d:d):null,error:r.ok?null:d})))}}}}},update:function(v){return{eq:function(f,id){return fetch(`${u}/rest/v1/${t}?${f}=eq.${id}`,{method:'PATCH',headers:{apikey:k,Authorization:`Bearer ${k}`,'Content-Type':'application/json'},body:JSON.stringify(v)}).then(r=>({error:r.ok?null:r}))}}},order:function(c,o){return{eq:function(f,v){return fetch(`${u}/rest/v1/${t}?${f}=eq.${v}&select=*&order=${c}.${o.ascending?'asc':'desc'}`,{headers:{apikey:k,Authorization:`Bearer ${k}`}}).then(r=>r.json().then(d=>({data:r.ok?d:null,error:r.ok?null:d})))}}}}}}};})));
     </script>
     <style>
         :root { --tg-blue: #248bcf; --tg-bg: #f4f4f5; --tg-sent: #effdde; }
@@ -21,7 +21,7 @@
         .sidebar-header { padding: 15px; background: var(--tg-blue); color: white; display: flex; align-items: center; gap: 10px; }
         .contact-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
         .contact-item.active { background: #e3f2fd; border-left: 4px solid var(--tg-blue); }
-        .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background: #999; flex-shrink: 0; position: relative; }
+        .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background: #999; flex-shrink: 0; }
         .chat-area { display: flex; flex-direction: column; background: #e7ebf0 url('https://githubusercontent.com'); }
         #messages-view { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
         .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 15px; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
@@ -35,7 +35,7 @@
 <body>
     <div id="auth-screen">
         <div class="auth-box">
-            <h2 id="auth-title" style="margin:0">登录 Cloud Telegram</h2>
+            <h2 id="auth-title" style="margin-top:0">登录 Cloud Telegram</h2>
             <p id="auth-subtitle" style="color:#666; font-size:14px; margin:10px 0 20px">使用云端账号 永久同步消息</p>
             <input type="text" id="u-name" class="tg-input" placeholder="用户名">
             <input type="password" id="u-pwd" class="tg-input" placeholder="密码">
@@ -49,10 +49,7 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <div id="my-av" class="avatar" style="cursor:pointer; border:2px solid rgba(255,255,255,0.3)" onclick="openAvModal()">?</div>
-                <div style="flex:1">
-                    <div id="my-name" style="font-weight:bold; font-size:16px">同步中...</div>
-                    <div style="font-size:11px; opacity:0.8">24H 云端挂机中</div>
-                </div>
+                <div style="flex:1"><div id="my-name" style="font-weight:bold">正在同步...</div><div style="font-size:11px; opacity:0.8">24H 云端挂机</div></div>
                 <button onclick="logout()" style="background:none; border:none; color:white; font-size:11px; cursor:pointer">退出</button>
             </div>
             <div style="padding:10px; border-bottom:1px solid #eee">
@@ -63,7 +60,7 @@
         <div class="chat-area">
             <div style="padding:12px 20px; background:white; border-bottom:1px solid #ddd; display:flex; align-items:center; gap:10px">
                 <div id="t-av" class="avatar" style="width:34px; height:34px; font-size:14px">?</div>
-                <div id="t-name" style="font-weight:bold">选择联系人</div>
+                <div id="t-name" style="font-weight:bold">请选择聊天对象</div>
             </div>
             <div id="messages-view"></div>
             <div class="chat-footer">
@@ -97,7 +94,10 @@
             if(!name || !pwd) return alert("请填写完整");
             tips.innerText = "⚡ 正在穿透网络连接云端...";
             try {
-                let { data: u } = await _s.from('users').select('*').eq('username', name).maybeSingle();
+                // 修正：不再使用 maybeSingle 以防网络拦截导致解析失败
+                let { data: users } = await _s.from('users').select('*').eq('username', name);
+                let u = users && users[0];
+
                 if (isRegMode) {
                     if (u) { tips.innerText = "❌ 账号已存在"; return; }
                     const { data: newUser } = await _s.from('users').insert([{ username: name, password: pwd, avatar_index: Math.floor(Math.random()*8) }]).select().single();
@@ -109,7 +109,10 @@
                 }
                 localStorage.setItem('tg_pro_user', JSON.stringify(me));
                 startApp();
-            } catch(e) { tips.innerText = "❌ 连接异常，请换手机流量并刷新"; }
+            } catch(e) { 
+                console.error(e);
+                tips.innerText = "❌ 连接异常，请换手机流量并刷新"; 
+            }
         }
 
         function logout() { localStorage.removeItem('tg_pro_user'); location.reload(); }
@@ -145,7 +148,7 @@
             target = id;
             document.getElementById('t-name').innerText = name;
             const tAv = document.getElementById('t-av');
-            tAv.innerText = name.charAt(0).toUpperCase();
+            tAv.innerText = name.toUpperCase();
             tAv.style.background = id === 'PUBLIC_DOMAIN' ? '#f39c12' : avColors[idx%8];
             document.getElementById('messages-view').innerHTML = '';
             window.rIds = new Set();
