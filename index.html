@@ -172,16 +172,28 @@
         document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
     }
 
-    // 发送功能
+       // 发送功能 - 增强版
     window.sendMsg = async function() {
         const input = document.getElementById('ipt');
         const val = input.value.trim();
         if (!val) return;
-        input.value = '';
         
+        // 1. 先在本地屏幕上显示消息（增强反馈感）
+        addMessageToScreen({ username: user, content: val, created_at: new Date().toISOString() });
+        input.value = '';
+
+        // 2. 发送到云端
         const { error } = await _s.from('messages').insert([{ username: user, content: val }]);
-        if (error) alert("发送失败，请检查网络");
+        
+        if (error) {
+            console.error("发送失败:", error);
+            alert("云端同步失败，请检查网络");
+        } else {
+            // 3. 发送成功后立刻拉取一次最新数据
+            loadMessages();
+        }
     };
+
 
     // 绑定回车
     document.getElementById('ipt').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
