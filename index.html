@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>云端聊天室</title>
-    <!-- 换一个更稳定的分发服务器地址 -->
-    <script src="https://unpkg.com"></script>
+    <!-- 尝试从国内加速镜像加载库 -->
+    <script src="https://baomitu.com"></script>
     <style>
         body { font-family: sans-serif; background: #e7ebf0; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         header { background: #517da2; color: white; padding: 15px; text-align: center; font-weight: bold; }
@@ -13,12 +13,12 @@
         .msg { background: white; padding: 10px; border-radius: 10px; align-self: flex-start; max-width: 75%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .msg.me { background: #effdde; align-self: flex-end; }
         footer { background: white; padding: 15px; display: flex; gap: 10px; border-top: 1px solid #ddd; }
-        input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
+        input { flex: 1; border: 1px solid #ccc; padding: 10px 15px; border-radius: 20px; outline: none; }
         button { background: #517da2; color: white; border: none; padding: 0 20px; border-radius: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <header id="status">正在同步云端数据...</header>
+    <header id="status">🌐 正在建立云端加密连接...</header>
     <div id="chat"></div>
     <footer>
         <input id="ipt" placeholder="输入消息..." autocomplete="off">
@@ -32,37 +32,40 @@
 
         let _s, user;
 
-        function init() {
-            if (typeof supabase === 'undefined') {
-                document.getElementById('status').innerText = "❌ 脚本加载中，请稍等或刷新...";
-                setTimeout(init, 2000); // 2秒后重试
-                return;
+        // 检查库是否加载成功
+        function start() {
+            if (window.supabase) {
+                init();
+            } else {
+                // 如果 baomitu 也没加载出来，尝试最后一个备用地址
+                let script = document.createElement('script');
+                script.src = "https://staticfile.org";
+                script.onload = init;
+                script.onerror = () => {
+                    document.getElementById('status').innerText = "❌ 网络极其不稳定，请尝试切换至手机热点并刷新";
+                };
+                document.head.appendChild(script);
             }
+        }
 
+        async function init() {
             _s = supabase.createClient(URL, KEY);
-            user = localStorage.getItem('chat_u') || prompt("云端连接成功！请输入昵称") || "访客";
+            user = localStorage.getItem('chat_u') || prompt("云端通道已开启！请输入聊天昵称") || "访客";
             localStorage.setItem('chat_u', user);
             
-            load();
+            document.getElementById('status').innerText = "✅ 云端已就绪 | 昵称: " + user;
+            
+            // 加载历史
+            const { data } = await _s.from('messages').select('*').order('created_at');
+            if(data) data.forEach(add);
             
             // 实时监听
             _s.channel('m').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, p => add(p.new)).subscribe();
         }
 
-        async function load() {
-            const { data, error } = await _s.from('messages').select('*').order('created_at');
-            if (error) {
-                document.getElementById('status').innerText = "❌ 连接失败: " + error.message;
-            } else {
-                document.getElementById('status').innerText = "✅ 云端已连接: " + user;
-                if(data) data.forEach(add);
-            }
-        }
-
         function add(m) {
             const d = document.createElement('div');
-            const isMe = m.username === user;
-            d.className = 'msg' + (isMe ? ' me' : '');
+            d.className = 'msg' + (m.username === user ? ' me' : '');
             d.innerText = m.username + ": " + m.content;
             document.getElementById('chat').appendChild(d);
             document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
@@ -71,15 +74,14 @@
         async function sendMsg() {
             const i = document.getElementById('ipt');
             const v = i.value.trim();
-            if(!v) return;
+            if(!v || !_s) return;
             i.value = '';
             await _s.from('messages').insert([{ username: user, content: v }]);
         }
 
         document.getElementById('ipt').addEventListener('keypress', e => { if(e.key === 'Enter') sendMsg(); });
         
-        // 启动
-        init();
+        start();
     </script>
 </body>
 </html>
