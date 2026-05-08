@@ -1,44 +1,77 @@
-<script>
-    const URL = 'https://supabase.co';
-    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Z3lxeWdyeWVhbGlmbnhpbmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjk4MzcsImV4cCI6MjA5MzgwNTgzN30.2_coqJbBl95QcnollMK2F2JSPJXexIkwy4rpiaH8EYc';
-    
-    const _s = supabase.createClient(URL, KEY);
-    
-    // 强制弹出昵称框
-    let user = localStorage.getItem('user') || prompt("欢迎！请输入聊天昵称") || "访客";
-    localStorage.setItem('user', user);
-    document.getElementById('status').innerText = "✅ 已连接: " + user;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云端聊天室</title>
+    <!-- 加载 Supabase 功能库 -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body { font-family: sans-serif; background: #e7ebf0; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        header { background: #517da2; color: white; padding: 15px; text-align: center; font-weight: bold; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { background: white; padding: 10px; border-radius: 10px; align-self: flex-start; max-width: 70%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        footer { background: white; padding: 15px; display: flex; gap: 10px; border-top: 1px solid #ddd; }
+        input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
+        button { background: #517da2; color: white; border: none; padding: 0 20px; border-radius: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <header id="status">正在同步云端数据...</header>
+    <div id="chat"></div>
+    <footer>
+        <input type="text" id="ipt" placeholder="输入消息..." autocomplete="off">
+        <button onclick="send()">发送</button>
+    </footer>
 
-    async function load() {
-        console.log("尝试加载数据...");
-        const { data, error } = await _s.from('messages').select('*').order('created_at');
-        if (error) {
-            console.error(error);
-            document.getElementById('status').innerText = "❌ 数据库报错: " + error.message;
-        } else if (data) {
-            data.forEach(m => add(m));
+    <script>
+        const URL = 'https://supabase.co';
+        const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Z3lxeWdyeWVhbGlmbnhpbmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjk4MzcsImV4cCI6MjA5MzgwNTgzN30.2_coqJbBl95QcnollMK2F2JSPJXexIkwy4rpiaH8EYc';
+        
+        const _s = supabase.createClient(URL, KEY);
+        
+        // 1. 强制先弹窗获取昵称，确保程序在运行
+        let user = localStorage.getItem('user') || prompt("云端连接成功！请输入昵称") || "访客";
+        localStorage.setItem('user', user);
+
+        // 2. 加载历史数据函数
+        async function load() {
+            const { data, error } = await _s.from('messages').select('*').order('created_at');
+            if (error) {
+                document.getElementById('status').innerText = "❌ 错误: " + error.message;
+            } else {
+                document.getElementById('status').innerText = "✅ 云端已连接: " + user;
+                if(data) data.forEach(m => add(m));
+            }
         }
-    }
 
-    function add(m) {
-        const d = document.createElement('div');
-        d.style = "background:white; padding:10px; border-radius:10px; margin:5px; align-self:flex-start; max-width:70%;";
-        d.innerText = m.username + ": " + m.content;
-        document.getElementById('chat').appendChild(d);
-        document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
-    }
+        // 3. 页面显示消息函数
+        function add(m) {
+            const d = document.createElement('div');
+            d.className = 'msg';
+            d.innerText = m.username + ": " + m.content;
+            document.getElementById('chat').appendChild(d);
+            document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+        }
 
-    async function send() {
-        const i = document.getElementById('ipt');
-        const v = i.value.trim(); 
-        if(!v) return;
-        i.value = '';
-        // 发送时如果不成功会弹窗提示
-        const { error } = await _s.from('messages').insert([{ username: user, content: v }]);
-        if (error) alert("发送失败: " + error.message);
-    }
+        // 4. 发送消息函数
+        async function send() {
+            const i = document.getElementById('ipt');
+            const v = i.value.trim(); 
+            if(!v) return;
+            i.value = '';
+            const { error } = await _s.from('messages').insert([{ username: user, content: v }]);
+            if (error) alert("发送失败: " + error.message);
+        }
 
-    _s.channel('m').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, p => add(p.new)).subscribe();
-    document.getElementById('ipt').addEventListener('keypress', e => { if(e.key === 'Enter') send(); });
-    load();
-</script>
+        // 5. 实时监听新消息
+        _s.channel('m').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, p => add(p.new)).subscribe();
+        
+        // 6. 绑定回车键
+        document.getElementById('ipt').addEventListener('keypress', e => { if(e.key === 'Enter') send(); });
+        
+        // 7. 执行加载
+        load();
+    </script>
+</body>
+</html>
