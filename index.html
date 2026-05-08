@@ -123,28 +123,44 @@
         }
 
         // --- 3. 身份验证核心 ---
-        async function handleAuth() {
+                async function handleAuth() {
             const name = document.getElementById('u-name').value.trim();
             const pwd = document.getElementById('u-pwd').value.trim();
             const tips = document.getElementById('auth-tips');
             if(!name || !pwd) return alert("请填写完整");
 
-            tips.innerText = "⚡ 正在同步云端身份...";
+            tips.innerText = "⚡ 正在连接云端服务器...";
+            
+            // 增加 10 秒强制超时，防止无限转圈
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+
             try {
-                let { data: u } = await _s.from('users').select('*').eq('username', name).maybeSingle();
+                // 1. 尝试探测账号
+                let { data: u, error: fetchError } = await _s.from('users').select('*').eq('username', name).maybeSingle();
+                clearTimeout(timeoutId);
 
                 if (isRegMode) {
-                    if (u) { tips.innerText = "❌ 账号已存在，请换一个"; return; }
-                    const { data: newUser } = await _s.from('users').insert([{ username: name, password: pwd, avatar_index: Math.floor(Math.random()*8) }]).select().single();
+                    if (u) { tips.innerText = "❌ 账号已存在"; return; }
+                    // 2. 注册逻辑
+                    const { data: newUser, error: regError } = await _s.from('users').insert([{ username: name, password: pwd, avatar_index: Math.floor(Math.random()*8) }]).select().single();
+                    if (regError) throw regError;
                     me = newUser;
                 } else {
-                    if (!u) { tips.innerText = "❌ 账号不存在，请先注册"; return; }
+                    if (!u) { tips.innerText = "❌ 账号不存在"; return; }
                     if (u.password !== pwd) { tips.innerText = "❌ 密码错误"; return; }
                     me = u;
                 }
                 localStorage.setItem('tg_pro_user', JSON.stringify(me));
                 startApp();
-            } catch(e) { tips.innerText = "❌ 连接异常，请刷新重试"; }
+            } catch(e) {
+                console.error(e);
+                if (e.name === 'AbortError') {
+                    tips.innerText = "❌ 连接超时！请尝试更换手机热点或开启加速器";
+                } else {
+                    tips.innerText = "❌ 错误: " + (e.message || "无法访问云端，请检查SQL权限");
+                }
+            }
         }
 
         function logout() { localStorage.removeItem('tg_pro_user'); location.reload(); }
