@@ -129,18 +129,39 @@
     const _s = supabase.createClient(URL, KEY);
     let user, lastId = null;
 
-    // 启动程序
+        // 1. 修改启动逻辑：确保每 3 秒检查一次云端
     async function init() {
         user = localStorage.getItem('chat_u') || prompt("云端连接成功！请输入聊天昵称") || "访客";
         localStorage.setItem('chat_u', user);
         document.getElementById('status').innerText = "✅ 云端已连接 | 昵称: " + user;
         
-        // 第一次加载历史消息
+        // 立即执行一次加载
         await loadMessages();
         
-        // 开启自动同步（每3秒检查一次新消息）
-        setInterval(loadMessages, 3000);
+        // 【核心修复】：每隔 3 秒钟，强制去云端拿一次所有人的新消息
+        setInterval(async () => {
+            await loadMessages();
+        }, 3000); 
     }
+
+    // 2. 修改加载逻辑：确保不漏掉别人的消息
+    async function loadMessages() {
+        // 从云端拿取最新的消息记录
+        const { data, error } = await _s.from('messages').select('*');
+        if (error || !data) return;
+        
+        if (!window.renderedMsgs) window.renderedMsgs = new Set();
+        
+        data.forEach(m => {
+            // 使用“用户名+内容”作为唯一指纹，防止重复显示
+            const msgKey = m.username + m.content; 
+            if (!window.renderedMsgs.has(msgKey)) {
+                addMessageToScreen(m);
+                window.renderedMsgs.add(msgKey);
+            }
+        });
+    }
+
 
         async function loadMessages() {
         const { data, error } = await _s.from('messages').select('*').order('created_at', { ascending: true });
